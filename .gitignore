@@ -17,6 +17,9 @@ wav_to_mp4_log.txt
 # Test run output (tests/minutes.yml で tests/output/ に出力)
 tests/output/
 
+# Test input media (large files; do not commit to GitHub)
+tests/data/input/
+
 # Script logs
 scripts/push_github_log.txt
 git_out.txt
