@@ -1,0 +1,42 @@
+# 開発環境用（ASR large-v3、GPU、float16）
+# GPU なし環境では tests/minutes_large.yml を使用すること
+# VRAM 不足や GPU 共有時は tests/minutes_dev_lowvram.yml（compute_type: int8）を試す
+# 使用: mpipe run tests/data/input/.../<stem>.wav --config tests/minutes_dev.yml
+# 出力: tests/output/<日付>_<stem>_gpu/
+
+project:
+  name: "test-run"
+
+paths:
+  input_dir: "data/input"
+  output_dir: "output"
+  logs_dir: "logs"
+
+naming:
+  output_folder: "{date}_{stem}_gpu"
+
+pipeline:
+  save_intermediates: true
+  steps:
+    - asr
+    - preprocess
+    - summarize
+
+asr:
+  engine: "whisper"
+  model: "large-v3"
+  device: "cuda"
+  compute_type: "float16"
+
+preprocess:
+  dictionaries:
+    terms_csv: "../examples/project-template/dictionaries/terms.csv"
+    stop_phrases: "../examples/project-template/dictionaries/stop_phrases.txt"
+
+summarize:
+  engine: "manual"
+  output_md: "minutes_draft.md"
+  prompt_path: "../examples/project-template/prompts/minutes_prompt.md"
+  schema_path: "../examples/project-template/prompts/minutes_schema.json"
+  max_transcript_chars: 40000
+  ollama_base_url: "http://localhost:11434"

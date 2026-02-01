@@ -1,0 +1,40 @@
+# 最も軽い・tiny（ASR tiny、CPU、int8）
+# 使用: mpipe run tests/data/input/.../<stem>.wav --config tests/minutes_tiny.yml
+# 出力: tests/output/<日付>_<stem>_tiny/
+
+project:
+  name: "test-run"
+
+paths:
+  input_dir: "data/input"
+  output_dir: "output"
+  logs_dir: "logs"
+
+naming:
+  output_folder: "{date}_{stem}_tiny"
+
+pipeline:
+  save_intermediates: true
+  steps:
+    - asr
+    - preprocess
+    - summarize
+
+asr:
+  engine: "whisper"
+  model: "tiny"
+  device: "cpu"
+  compute_type: "int8"
+
+preprocess:
+  dictionaries:
+    terms_csv: "../examples/project-template/dictionaries/terms.csv"
+    stop_phrases: "../examples/project-template/dictionaries/stop_phrases.txt"
+
+summarize:
+  engine: "manual"
+  output_md: "minutes_draft.md"
+  prompt_path: "../examples/project-template/prompts/minutes_prompt.md"
+  schema_path: "../examples/project-template/prompts/minutes_schema.json"
+  max_transcript_chars: 40000
+  ollama_base_url: "http://localhost:11434"

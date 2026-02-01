@@ -1,0 +1,26 @@
+[project]
+name = "minutes-pipeline"
+version = "0.3.0"
+description = "Meeting minutes pipeline (mp4 -> ASR -> preprocess -> summarize -> markdown)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0.0"]
+anthropic = ["anthropic>=0.20.0"]
+ollama = ["httpx>=0.27.0"]
+jsonschema = ["jsonschema>=4.22.0"]
+# ASR: いずれか1つをインストールすれば音声認識が利用可能（faster-whisper 推奨・高速）
+asr = ["faster-whisper", "openai-whisper"]
+
+[project.scripts]
+mpipe = "minutes_pipeline.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

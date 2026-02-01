@@ -1,0 +1,37 @@
+project:
+  name: "sample-project"
+
+paths:
+  input_dir: "input"
+  output_dir: "output"
+  logs_dir: "logs"
+
+naming:
+  output_folder: "{date}_{stem}"
+
+pipeline:
+  save_intermediates: true
+  steps:
+    - asr
+    - preprocess
+    - summarize
+
+asr:
+  engine: "whisper"
+  model: "large-v3"
+  device: "cpu"
+  compute_type: "int8"
+
+preprocess:
+  dictionaries:
+    terms_csv: "dictionaries/terms.csv"
+    stop_phrases: "dictionaries/stop_phrases.txt"
+
+summarize:
+  # mock/manual/openai/anthropic/ollama
+  engine: "manual"
+  output_md: "minutes_draft.md"
+  prompt_path: "prompts/minutes_prompt.md"
+  schema_path: "prompts/minutes_schema.json"
+  max_transcript_chars: 40000
+  ollama_base_url: "http://localhost:11434"

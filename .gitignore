@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+dist/
+build/
+*.egg-info/
+
+# OS
+.DS_Store
+*Zone.Identifier
+
+# Local
+.env
+wav_to_mp4_log.txt
+
+# Test run output (tests/minutes.yml で tests/output/ に出力)
+tests/output/
+
+# Script logs
+scripts/push_github_log.txt
+git_out.txt
