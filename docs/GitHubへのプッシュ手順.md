@@ -94,6 +94,22 @@ git push -u origin main
 
 ---
 
+## 認証（方法4）でうまくいかない場合 → 最も確実な方法
+
+PAT や SSH の設定でエラーになる場合は、**GitHub CLI（gh）でブラウザ認証**する方法が最も確実です。  
+PAT のコピー・貼り付けや SSH 鍵の登録は不要で、ブラウザで GitHub にログインするだけで認証が完了します。
+
+**手順の詳細**: [GitHubプッシュ_最も確実な方法_GitHub_CLI.md](./GitHubプッシュ_最も確実な方法_GitHub_CLI.md)
+
+**流れの要約**:
+
+1. **gh** をインストール（WSL なら `sudo apt install gh` の前に [同ドキュメント](./GitHubプッシュ_最も確実な方法_GitHub_CLI.md) のインストール手順を参照）
+2. **`gh auth login`** を実行 → 「Login with a web browser」を選ぶ → ブラウザでコードを入力して認証（一度だけ）
+3. リモートが HTTPS であることを確認: `git remote set-url origin https://github.com/kmh-no3/minutes_pipeline.git`
+4. いつもどおり **`git push -u origin main`** または **`bash scripts/push_to_github.sh`**
+
+---
+
 ## プッシュ後の確認
 
 ブラウザで https://github.com/kmh-no3/minutes_pipeline を開き、ファイルが反映されているか確認してください。

@@ -2,6 +2,8 @@
 
 社用PCで本プロジェクトを利用する場合の手順です。ZIP でダウンロードし、WSL 上で展開・セットアップして実行します。
 
+**Google Drive などにリポジトリを置いて社用PCで編集し、そこから GitHub へプッシュする運用**も可能です。詳しくは [「Google Drive などに置いて社用PCで編集・プッシュする場合」](#google-drive-などに置いて社用pcで編集プッシュする場合) を参照してください。
+
 ---
 
 ## 前提
@@ -201,6 +203,60 @@ mpipe apply output/<実行ID>/llm_output.json --transcript output/<実行ID>/tra
 
 - **WSL で Python がない**  
   → `sudo apt update && sudo apt install -y python3 python3-venv python3-pip unzip` でインストールできます。
+
+---
+
+## Google Drive などに置いて社用PCで編集・プッシュする場合
+
+**本リポジトリを Google Drive（や OneDrive、Dropbox など）に保存し、社用PC側で開いて編集し、そこから GitHub へプッシュする**形でも問題ありません。
+
+### 運用の流れ
+
+1. **自宅PC（または今の環境）**  
+   - リポジトリを **Google Drive のフォルダ** にクローンする（または既存のリポジトリを Drive フォルダにコピーする）。
+2. **Drive の同期**  
+   - 普段どおり Drive が同期するので、社用PC の Drive フォルダにも同じ内容が現れる。
+3. **社用PC**  
+   - Drive 上の **そのリポジトリのフォルダ** を開いて編集する。  
+   - 編集が終わったら **社用PC 上で** `git add` → `git commit` → `git push` する。
+
+このとき、**プッシュは社用PC から GitHub へ直接**行う形になります（Drive は「ファイルの置き場所」であり、Git のリモートはあくまで GitHub です）。
+
+### やっておくとよいこと
+
+| 項目 | 説明 |
+|------|------|
+| **プッシュ前に同期完了を待つ** | 社用PC で編集・コミットしたあと、Drive の同期が完了してから自宅PC で触る（またはその逆）。中途半端な同期のまま両方で編集すると、`.git` の不整合やコンフリクトの原因になります。 |
+| **片方で編集したら push → もう片方で pull** | 自宅PC で変更したら `git push` してから社用PC で `git pull`。社用PC で変更したら `git push` してから自宅PC で `git pull`。そうすると履歴がずれにくくなります。 |
+| **認証は社用PC でも必要** | 社用PC から初めて `git push` するときは、その PC で GitHub 認証（PAT、SSH、または [GitHub CLI（gh）でのブラウザ認証](GitHubプッシュ_最も確実な方法_GitHub_CLI.md)）が必要です。 |
+
+### 注意点（クラウド同期と .git）
+
+- **`.git` フォルダも一緒に同期**されるため、**同じタイミングで自宅PC と社用PC の両方で `git` を実行しない**ようにすると安全です。  
+  例: 社用PC で `git commit` したら、Drive の同期が終わってから自宅PC で `git pull` する。
+- まれに、同期の競合で `.git` 内のファイルが壊れたり、重複ファイル（「conflicted copy」など）ができることがあります。その場合は、片方の PC で `git status` や `git fsck` で状態を確認し、必要なら `.git` を直すか、もう一方の PC の状態を捨てて `git pull` で揃え直してください。
+- **大きなバイナリや仮想環境**（`.venv` など）をリポジトリに含めていると、Drive の同期が重くなります。`.gitignore` で除外されている場合はそのまま問題ありません。
+
+### 初回セットアップ（社用PC で Drive 上のリポジトリを使う場合）
+
+社用PC で **初めて** Drive 上のフォルダを使うときの例です。
+
+1. **Drive の同期**  
+   - Google Drive for Desktop などで、リポジトリを置いたフォルダが社用PC に同期されていることを確認する。
+2. **Git があるか確認**  
+   - 社用PC（WSL なら WSL 内、Windows なら PowerShell など）で `git --version` が動くか確認する。
+3. **リポジトリとして開く**  
+   - 同期された **リポジトリのルート**（`minutes-pipeline` のフォルダ）に `cd` する。  
+   - WSL で使う場合: Drive が `/mnt/c/Users/.../Google Drive/...` のようにマウントされていれば、そのパスで `cd` する。
+4. **リモートの確認**  
+   - `git remote -v` で `origin` が `https://github.com/kmh-no3/minutes_pipeline.git` などを指しているか確認する。  
+   - なければ `git remote add origin https://github.com/kmh-no3/minutes_pipeline.git` で追加する。
+5. **認証**  
+   - その PC で [GitHub 認証](GitHubプッシュ_最も確実な方法_GitHub_CLI.md)（gh のブラウザ認証がおすすめ）を行う。
+6. **プッシュ**  
+   - `git push -u origin main` で GitHub へプッシュする。
+
+このように、**Google Drive などに保存 → 社用PC で編集 → その社用PC から GitHub へプッシュ**という形で運用してかまいません。
 
 ---
 
