@@ -336,6 +336,7 @@ def _step_summarize(transcript_clean: Dict[str, Any], cfg: Dict[str, Any]) -> st
         "必ず指定されたJSON Schemaに適合する**JSONのみ**を返してください。"
         "余計な文章やMarkdownは禁止です。"
         "決定事項とToDo（担当・期限）を特に重視してください。"
+        "ToDoには会議後にやるタスクのみを含めてください。"
     )
 
     transcript_block = _format_transcript_for_prompt(
@@ -391,6 +392,8 @@ def _write_request_pack(transcript_clean: Dict[str, Any], cfg: Dict[str, Any], o
 - **コードフェンス（```）や前置き、解説は禁止**
 - JSONは **指定されたSchemaの必須キーを欠かさない**
 - 決定事項とToDo（担当・期限）を特に重視
+- ToDoは**会議後にやるタスクのみ**を含める。会議中のルール・手順（例：マイク/カメラオフ、質問はチャットへ）はToDoに含めない
+- next_stepsは空でよい（ToDoに一本化）
 - 任意で、決定事項・ToDoに発言時刻（例: 00:12:34）や根拠の短い引用（証跡）を付与するとよい
 - 不確かな場合は推測しない（未確定として書く、期限/担当が不明なら空文字でも可）
 - 日本語で書く
@@ -444,6 +447,7 @@ def _write_request_pack_chunked(cfg: Dict[str, Any], out_dir: Path, manifest: Di
 - **出力はJSONのみ**（コードフェンス禁止）
 - 必須トップレベル: {req_keys}
 - 決定事項とToDoを最優先で抽出。可能なら根拠のタイムスタンプも付与
+- ToDoは会議後にやるタスクのみを含める（会議中のルール・手順はToDoに含めない）
 """
     write_text(out_dir / "llm_instructions_chunk.md", chunk_instr)
 

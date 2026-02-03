@@ -2,7 +2,7 @@ from __future__ import annotations
 
 DEFAULT_SCHEMA = {
   "type": "object",
-  "required": ["meeting", "summary", "decisions", "todos", "topics", "open_questions", "next_steps"],
+  "required": ["meeting", "summary", "decisions", "todos", "topics", "open_questions"],
   "properties": {
     "meeting": {
       "type": "object",

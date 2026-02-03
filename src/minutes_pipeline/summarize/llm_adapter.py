@@ -19,10 +19,12 @@ class MockSummarizer:
             "meeting": {"title": "（自動生成）", "date": "", "participants": []},
             "summary": ["（モック要約）LLMを有効化すると精度が上がります。"],
             "decisions": [],
-            "todos": [],
+            "todos": [
+                {"owner": "", "task": "summarize.engine を manual または API/ollama に切り替える。", "due": ""}
+            ],
             "topics": [],
             "open_questions": [],
-            "next_steps": ["summarize.engine を manual または API/ollama に切り替える。"],
+            "next_steps": [],
             "notes": "",
         }
         return json.dumps(minutes, ensure_ascii=False)

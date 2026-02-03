@@ -9,7 +9,7 @@ def test_request_pack_creates_files(tmp_path: Path):
     (tmp_path/"prompts"/"minutes_prompt.md").write_text("JSONで要約してください。", encoding="utf-8")
     (tmp_path/"prompts"/"minutes_schema.json").write_text(json.dumps({
         "type":"object",
-        "required":["meeting","summary","decisions","todos","topics","open_questions","next_steps"],
+        "required":["meeting","summary","decisions","todos","topics","open_questions"],
         "properties":{}
     }, ensure_ascii=False), encoding="utf-8")
     (tmp_path/"minutes.yml").write_text("""

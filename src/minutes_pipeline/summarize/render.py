@@ -229,8 +229,6 @@ def render_minutes_md(minutes: Dict[str, Any]) -> str:
     topics = _list_to_strings(topics_raw, ("topic",))
     open_q_raw = minutes.get("open_questions", []) or []
     open_q = _list_to_strings(open_q_raw, ("question",))
-    next_steps_raw = minutes.get("next_steps", []) or []
-    next_steps = _list_to_strings(next_steps_raw, ("step",))
     notes: str = _sanitize_notes(minutes.get("notes", "") or "")
 
     md: List[str] = []
@@ -295,14 +293,6 @@ def render_minutes_md(minutes: Dict[str, Any]) -> str:
             md.append(f"- {q}")
     else:
         md.append("- （未決事項なし）")
-    md.append("")
-
-    md.append("## 次のアクション")
-    if next_steps:
-        for n in next_steps:
-            md.append(f"- {n}")
-    else:
-        md.append("- （次アクションなし）")
     md.append("")
 
     if notes:
