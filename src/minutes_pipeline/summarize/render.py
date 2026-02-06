@@ -48,6 +48,21 @@ def check_minutes_quality(minutes: Dict[str, Any]) -> List[str]:
     return warnings
 
 
+def _to_text(value: Any) -> str:
+    """Normalize any value to text string. Handles list/dict/None gracefully."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        # Join list items with newlines (preserves bullet-list intent)
+        return "\n".join(str(x).strip() for x in value if str(x).strip())
+    if isinstance(value, dict):
+        # Fallback for dict: convert to string to avoid crash
+        return str(value)
+    return str(value)
+
+
 def _participants_to_strings(participants_raw: Any) -> List[str]:
     """Normalize participants (string or list of str/dict) to list of display strings."""
     if not participants_raw:
@@ -69,22 +84,39 @@ def _participants_to_strings(participants_raw: Any) -> List[str]:
 
 
 def _summary_to_strings(summary_raw: Any) -> List[str]:
-    """Normalize summary (array of strings or dict with overview/highlights) to list of strings."""
+    """Normalize summary (array of strings or dict with overview/highlights) to list of strings.
+    
+    All elements are returned as separate items for bullet-point rendering.
+    """
     if not summary_raw:
         return []
     if isinstance(summary_raw, list):
-        return [str(s).strip() for s in summary_raw if str(s).strip()]
+        result: List[str] = []
+        for s in summary_raw:
+            text = _to_text(s).strip()
+            if text:
+                # If text contains newlines (from list->string conversion), split into separate items
+                for line in text.split("\n"):
+                    if line.strip():
+                        result.append(line.strip())
+        return result
     if isinstance(summary_raw, dict):
         lines: List[str] = []
-        overview = (summary_raw.get("overview") or "").strip()
+        # Use _to_text() to handle overview being list/dict/None gracefully
+        overview = _to_text(summary_raw.get("overview")).strip()
         if overview:
-            lines.append(overview)
+            # Split overview by newlines into separate items
+            for line in overview.split("\n"):
+                if line.strip():
+                    lines.append(line.strip())
         for h in summary_raw.get("highlights") or []:
             s = (h if isinstance(h, str) else str(h)).strip()
             if s:
                 lines.append(s)
         return lines
-    return [str(summary_raw)]
+    # Fallback: convert to string and split by newlines
+    text = str(summary_raw).strip()
+    return [line.strip() for line in text.split("\n") if line.strip()]
 
 
 def _item_to_string(item: Any, text_keys: tuple[str, ...]) -> str:
@@ -106,6 +138,101 @@ def _list_to_strings(raw: Any, text_keys: tuple[str, ...] = ("topic", "question"
     if isinstance(raw, str):
         return [raw.strip()] if raw.strip() else []
     return [_item_to_string(x, text_keys) for x in raw]
+
+
+def _render_topic_item(item: Any) -> str:
+    """Render a single topic item to a formatted string."""
+    if isinstance(item, str):
+        return item.strip()
+    if not isinstance(item, dict):
+        return str(item)
+
+    topic = (item.get("topic") or "").strip()
+    summary = (item.get("summary") or "").strip()
+
+    # Handle time_range (nested dict) or separate start/end fields
+    time_range = item.get("time_range")
+    if isinstance(time_range, dict):
+        start = (time_range.get("start") or "").strip()
+        end = (time_range.get("end") or "").strip()
+    else:
+        start = (item.get("start") or "").strip()
+        end = (item.get("end") or "").strip()
+
+    # Handle details (list) or notes (list)
+    details_raw = item.get("details") or item.get("notes") or []
+    if isinstance(details_raw, list):
+        details = [str(d).strip() for d in details_raw if str(d).strip()]
+    elif details_raw:
+        details = [str(details_raw).strip()]
+    else:
+        details = []
+
+    # Build formatted output
+    parts = []
+    if topic:
+        parts.append(f"**{topic}**")
+    if start or end:
+        # Remove existing brackets to avoid double brackets
+        start_clean = start.strip("[]") if start else ""
+        end_clean = end.strip("[]") if end else ""
+        time_str = f"[{start_clean}〜{end_clean}]" if start_clean and end_clean else f"[{start_clean or end_clean}]"
+        parts.append(time_str)
+
+    line = " ".join(parts)
+    if summary:
+        line += f": {summary}" if line else summary
+
+    if details:
+        # Append notes/details as sub-items
+        detail_str = " / ".join(details)
+        if line:
+            line += f" （備考: {detail_str}）"
+        else:
+            line = detail_str
+
+    return line if line else str(item)
+
+
+def _render_open_question_item(item: Any) -> str:
+    """Render a single open question item to a formatted string."""
+    if isinstance(item, str):
+        return item.strip()
+    if not isinstance(item, dict):
+        return str(item)
+
+    question = (item.get("question") or "").strip()
+    owner = (item.get("owner") or "").strip()
+    due_date = (item.get("due_date") or item.get("due") or "").strip()
+    timestamp = (item.get("related_timestamp") or item.get("timestamp") or "").strip()
+    status = (item.get("status") or "").strip()
+    notes_raw = item.get("notes") or ""
+    notes = notes_raw.strip() if isinstance(notes_raw, str) else ""
+
+    if not question:
+        return str(item)
+
+    # Build formatted output
+    line = question
+
+    # Add metadata in parentheses
+    meta_parts = []
+    if owner:
+        meta_parts.append(f"担当: {owner}")
+    if due_date:
+        meta_parts.append(f"期限: {due_date}")
+    if timestamp:
+        meta_parts.append(f"時刻: {timestamp}")
+    if status:
+        meta_parts.append(f"状態: {status}")
+
+    if meta_parts:
+        line += " （" + " / ".join(meta_parts) + "）"
+
+    if notes:
+        line += f" ※{notes}"
+
+    return line
 
 
 def _sanitize_notes(notes_raw: Any) -> str:
@@ -226,9 +353,7 @@ def render_minutes_md(minutes: Dict[str, Any]) -> str:
     decisions_raw = minutes.get("decisions") or []
     todos: List[Dict[str, Any]] = minutes.get("todos", []) or []
     topics_raw = minutes.get("topics", []) or []
-    topics = _list_to_strings(topics_raw, ("topic",))
     open_q_raw = minutes.get("open_questions", []) or []
-    open_q = _list_to_strings(open_q_raw, ("question",))
     notes: str = _sanitize_notes(minutes.get("notes", "") or "")
 
     md: List[str] = []
@@ -280,17 +405,17 @@ def render_minutes_md(minutes: Dict[str, Any]) -> str:
     md.append("")
 
     md.append("## 論点・検討事項")
-    if topics:
-        for t in topics:
-            md.append(f"- {t}")
+    if topics_raw:
+        for t in topics_raw:
+            md.append(f"- {_render_topic_item(t)}")
     else:
         md.append("- （論点なし）")
     md.append("")
 
     md.append("## 未決事項・オープンクエスチョン")
-    if open_q:
-        for q in open_q:
-            md.append(f"- {q}")
+    if open_q_raw:
+        for q in open_q_raw:
+            md.append(f"- {_render_open_question_item(q)}")
     else:
         md.append("- （未決事項なし）")
     md.append("")

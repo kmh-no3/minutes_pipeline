@@ -42,6 +42,7 @@ from .summarize.render import (
     check_minutes_quality,
     _render_minutes_md_sections_format,
 )
+from .summarize.models import validate_minutes_json
 
 
 def run_pipeline(input_media: Path, config_path: Path) -> None:
@@ -150,6 +151,19 @@ def apply_llm_output(llm_json_path: Path, transcript_clean_path: Path, config_pa
     # Accept raw JSON text too (in case saved as .txt)
     raw = llm_json_path.read_text(encoding="utf-8").strip()
     minutes_obj = extract_json(raw) if not raw.startswith("{") else json.loads(raw)
+
+    # Pydantic validation with type normalization
+    try:
+        validated_model, pydantic_warnings = validate_minutes_json(minutes_obj)
+        if pydantic_warnings:
+            print("[Pydantic検証警告]")
+            for w in pydantic_warnings:
+                print(f"  - {w}")
+        # Convert back to dict for rendering
+        minutes_obj = validated_model.to_dict()
+    except Exception as e:
+        print(f"[Pydantic検証エラー] {e}")
+        # Continue with original data if validation fails completely
 
     schema = load_schema(cfg["__project_root__"], cfg["summarize"]["schema_path"])
     err = try_validate_schema(minutes_obj, schema)
